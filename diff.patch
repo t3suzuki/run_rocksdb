@@ -1,0 +1,65 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 4e30f6631..caa2899b4 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -496,7 +496,7 @@ if(NOT WIN32)
+   add_definitions(-DROCKSDB_PLATFORM_POSIX -DROCKSDB_LIB_IO_POSIX)
+ endif()
+ 
+-option(WITH_FALLOCATE "build with fallocate" ON)
++option(WITH_FALLOCATE "build with fallocate" OFF)
+ if(WITH_FALLOCATE)
+   CHECK_CXX_SOURCE_COMPILES("
+ #include <fcntl.h>
+diff --git a/util/thread_local.cc b/util/thread_local.cc
+index 969639d9b..8b350e394 100644
+--- a/util/thread_local.cc
++++ b/util/thread_local.cc
+@@ -1,3 +1,4 @@
++#define GETSPECIFIC (1)
+ //  Copyright (c) 2011-present, Facebook, Inc.  All rights reserved.
+ //  This source code is licensed under both the GPLv2 (found in the
+ //  COPYING file in the root directory) and Apache 2.0 License
+@@ -140,14 +141,18 @@ class ThreadLocalPtr::StaticMeta {
+   // using this variable directly.
+   port::Mutex mutex_;
+   // Thread local storage
++#ifndef GETSPECIFIC
+   static thread_local ThreadData* tls_;
++#endif
+ 
+   // Used to make thread exit trigger possible if !defined(OS_MACOSX).
+   // Otherwise, used to retrieve thread data.
+   pthread_key_t pthread_key_;
+ };
+ 
++#ifndef GETSPECIFIC
+ thread_local ThreadData* ThreadLocalPtr::StaticMeta::tls_ = nullptr;
++#endif
+ 
+ // Windows doesn't support a per-thread destructor with its
+ // TLS primitives.  So, we build it manually by inserting a
+@@ -317,6 +322,10 @@ ThreadLocalPtr::StaticMeta::StaticMeta()
+ #if !defined(OS_WIN)
+   static struct A {
+     ~A() {
++#ifdef GETSPECIFIC
++      ThreadData* tls_ =
++        static_cast<ThreadData*>(pthread_getspecific(Instance()->pthread_key_));
++#endif
+       if (tls_) {
+         OnThreadExit(tls_);
+       }
+@@ -350,6 +359,12 @@ void ThreadLocalPtr::StaticMeta::RemoveThreadData(ThreadData* d) {
+ }
+ 
+ ThreadData* ThreadLocalPtr::StaticMeta::GetThreadLocal() {
++
++#ifdef GETSPECIFIC
++  ThreadData* tls_ =
++    static_cast<ThreadData*>(pthread_getspecific(Instance()->pthread_key_));
++#endif
++  
+   if (UNLIKELY(tls_ == nullptr)) {
+     auto* inst = Instance();
+     tls_ = new ThreadData(inst);
