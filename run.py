@@ -15,10 +15,10 @@ def get_db_bench_cmd(mode, is_abt, threads, cache_size):
     else:
         benchmarks = "readrandom"
         existing_db = 1
-        duration = "--duration 10"
+        duration = "--duration 30"
         
     if is_abt:
-        db_path = "/tmp/myfile4"
+        db_path = "/home/tomoya-s/mountpoint/tomoya-s/rocksdb_abt400m"
     else:
         db_path = "/home/tomoya-s/mountpoint/tomoya-s/dbfile400m"
         
@@ -29,6 +29,10 @@ def get_db_bench_cmd(mode, is_abt, threads, cache_size):
 
 
 def run_abt(mode, n_core, n_ult, cache_size):
+    if mode == "set":
+        print("We are modifying database. Are you Sure? (Y/N)")
+        x = input()
+        assert x == "y"
     mylib_build_cmd = "make -C {} ABT_PATH={} N_TH={}".format(MYLIB_PATH, ABT_PATH, n_core)
     process = subprocess.run(mylib_build_cmd.split())
 
@@ -45,7 +49,8 @@ def run_native(mode, n_core, n_pth, cache_size):
 #run_native("set", 1, 1, 1024*1024)
 run_abt("set", 1, 1, 1024*1024)
 for n_core in [1,2,4,8]:
-    for n_pth in [16,32,64,128,256,512]:
+    #for n_pth in [16,32,64,128,256,512]:
+    for n_pth in [64]:
         #run_native("get", n_core, n_pth, 1024*1024)
         run_abt("get", n_core, n_pth, 1024*1024)
     
