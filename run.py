@@ -1,7 +1,7 @@
 import subprocess, os
 
-ARGOBOTS_LIB_PATH = "/home/tomoya-s/work/github/argobots/install/lib"
-MYLIB_PATH = "."
+ABT_PATH = "/home/tomoya-s/work/github/argobots/install"
+MYLIB_PATH = "/home/tomoya-s/work/pthabt/newlib"
 
 def get_db_bench_cmd(mode, is_abt, threads, cache_size):
     key_size = 32
@@ -29,30 +29,23 @@ def get_db_bench_cmd(mode, is_abt, threads, cache_size):
 
 
 def run_abt(mode, n_core, n_ult, cache_size):
-    mylib_build_cmd = "make -C newlib N_TH={}".format(n_core)
-    process = subprocess.Popen(mylib_build_cmd.split(), stdout=subprocess.PIPE, env=my_env)
-    stdoutdata, _ = process.communicate()
+    mylib_build_cmd = "make -C {} ABT_PATH={} N_TH={}".format(MYLIB_PATH, ABT_PATH, n_core)
+    process = subprocess.run(mylib_build_cmd.split())
 
     my_env = os.environ.copy()
     my_env["LD_PRELOAD"] = MYLIB_PATH + "/mylib.so"
-    my_env["LD_LIBRARY_PATH"] = ARGOTBOS_LIB_PATH
-    my_env["ABT_THREAD_STACKSIZE"] = 65536
-
-    process = subprocess.Popen(get_db_becnch_cmd(mode, True, n_ult, cache_size).split(), stdout=subprocess.PIPE, env=my_env)
-    stddata = process.communicate()
-    print(stddata[0])
-
+    my_env["LD_LIBRARY_PATH"] = ABT_PATH + "/lib"
+    my_env["ABT_THREAD_STACKSIZE"] = "65536"
+    process = subprocess.run(get_db_bench_cmd(mode, True, n_ult, cache_size).split(), env=my_env)
 
 def run_native(mode, n_core, n_pth, cache_size):
     main_cmd = "taskset -c 0-{} ".format(n_core-1) + get_db_bench_cmd(mode, False, n_pth, cache_size)
-    #process = subprocess.Popen(main_cmd.split(), stdout=subprocess.PIPE)
     process = subprocess.run(main_cmd.split())
-    #stddata = process.communicate()
-    #print(stddata[0])
-
 
 #run_native("set", 1, 1, 1024*1024)
+run_abt("set", 1, 1, 1024*1024)
 for n_core in [1,2,4,8]:
     for n_pth in [16,32,64,128,256,512]:
-        run_native("get", n_core, n_pth, 1024*1024)
+        #run_native("get", n_core, n_pth, 1024*1024)
+        run_abt("get", n_core, n_pth, 1024*1024)
     
