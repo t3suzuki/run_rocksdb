@@ -31,11 +31,12 @@ def run(mode, op, n_core, n_th, cache_size):
         print("We are modifying database {}. Are you Sure? (Y/N)".format(db_path))
         x = input()
         assert x == "y"
-    mylib_build_cmd = "make -C {} ABT_PATH={} N_TH={}".format(MYLIB_PATH, ABT_PATH, n_core)
-    process = subprocess.run(mylib_build_cmd.split())
 
     my_env = os.environ.copy()
     if mode == "abt":
+        mylib_build_cmd = "make -C {} ABT_PATH={} N_TH={}".format(MYLIB_PATH, ABT_PATH, n_core)
+        process = subprocess.run(mylib_build_cmd.split())
+        
         my_env["LD_PRELOAD"] = MYLIB_PATH + "/mylib.so"
         my_env["LD_LIBRARY_PATH"] = ABT_PATH + "/lib"
         my_env["ABT_THREAD_STACKSIZE"] = "65536"
@@ -53,10 +54,12 @@ def run(mode, op, n_core, n_th, cache_size):
 #     for n_pth in [16,32,64,128,256,512]:
 #         run("abt", "get", n_core, n_pth, 1024*1024)
 
-for n_core in [1,2,4,8]:
-    for n_pth in [16,32,64,128,256,512]:
-        run("abt", "get", n_core, n_pth, 20*1024*1024*1024)
-        
+# for n_core in [1,2,4,8]:
+#     for n_pth in [16,32,64,128,256,512]:
+#         run("abt", "get", n_core, n_pth, 20*1024*1024*1024)
+
+#run("abt", "get", 1, 128, 1024*1024)
+
 for n_core in [1,2,4,8]:
     for n_pth in [8,16,32,64,128,256]:
         run("native", "get", n_core, n_pth, 1024*1024)
