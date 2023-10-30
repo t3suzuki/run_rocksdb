@@ -12,7 +12,7 @@ MYLIB_PATH = "/home/tomoya-s/mountpoint2/tomoya-s/pthabt/newlib"
 def get_db_bench_cmd(mode, op, threads, cache_size, db_path):
     key_size = 32
     val_size = 512
-    num = 200 * 1000 * 1000
+    num = 400 * 1000 * 1000
     
     if op == "set":
         benchmarks = "filluniquerandom"
@@ -21,7 +21,7 @@ def get_db_bench_cmd(mode, op, threads, cache_size, db_path):
     else:
         benchmarks = "readrandom"
         existing_db = 1
-        duration = "--duration 330 "
+        duration = "--duration=30 "
 
     if mode == "spdk":
         block_align = 0
@@ -33,10 +33,10 @@ def get_db_bench_cmd(mode, op, threads, cache_size, db_path):
 
 
 def run(mode, op, n_core, n_th, cache_size):
-    if mode == "abt":
-        db_path = "/home/tomoya-s/mountpoint2/tomoya-s/rocksdb_abt400m_1027"
+    if mode == "abt" or mode == "pthpth":
+        db_path = "/home/tomoya-s/mountpoint2/tomoya-s/rocksdb_abt400m"
     elif mode == "spdk":
-        db_path = "/home/tomoya-s/mountpoint2/tomoya-s/rocksdb_spdk400m"
+        db_path = "/home/tomoya-s/mountpoint2/tomoya-s/rocksdb_spdk4m"
     else:
         db_path = "/home/tomoya-s/mountpoint2/tomoya-s/rocksdb_native400m"
         
@@ -48,21 +48,36 @@ def run(mode, op, n_core, n_th, cache_size):
     my_env = os.environ.copy()
     if mode == "abt":
         drive_ids = ["0000:07:00.0","0000:0d:00.0"]
-        mylib_build_cmd = "make -C {} ABT_PATH={} N_TH={} ND={}".format(MYLIB_PATH, ABT_PATH, n_core, len(drive_ids))
+        mylib_build_cmd = "make -C {} ABT_PATH={} N_CORE={} ND={}".format(MYLIB_PATH, ABT_PATH, n_core, len(drive_ids))
         process = subprocess.run(mylib_build_cmd.split())
         
         my_env["LD_PRELOAD"] = MYLIB_PATH + "/mylib.so"
         my_env["LD_LIBRARY_PATH"] = ABT_PATH + "/lib"
-        my_env["ABT_PREEMPTION_INTERVAL_USEC"] = "100000"
-        my_env["ABT_THREAD_STACKSIZE"] = "65536"
+        my_env["ABT_PREEMPTION_INTERVAL_USEC"] = "10000000"
+        #my_env["ABT_THREAD_STACKSIZE"] = "65536"
+        my_env["ABT_THREAD_STACKSIZE"] = "1048576"
         my_env["HOOKED_ROCKSDB_DIR"] = db_path
         my_env["DRIVE_IDS"] = " ".join(drive_ids)
+        my_env["ABT_INITIAL_NUM_SUB_XSTREAMS"] = str(n_th)
         my_env["MYFS_SUPERBLOCK_PATH"] = "/root/myfs_superblock"
         cmd = get_db_bench_cmd(mode, op, n_th, cache_size, db_path)
     elif mode == "spdk":
         cmd = get_db_bench_cmd(mode, op, n_th, cache_size, db_path)
         cmd += " --spdk=../rocksdb.json --spdk_bdev=Nvme0n1 --spdk_cache_size=4096"
-        cmd = "taskset -c 0-{} ".format(n_core-1) + cmd
+        #cmd = "taskset -c 0-{} ".format(n_core-1) + cmd
+        #cmd = "taskset -c 0-{} ".format(n_core) + cmd
+    elif mode == "pthpth":
+        drive_ids = ["0000:07:00.0","0000:0d:00.0"]
+        mylib_build_cmd = "make pth -C {} ABT_PATH={} N_CORE={} ND={}".format(MYLIB_PATH, ABT_PATH, n_core, len(drive_ids))
+        process = subprocess.run(mylib_build_cmd.split())
+        
+        my_env["LD_PRELOAD"] = MYLIB_PATH + "/pthpth.so"
+        my_env["HOOKED_ROCKSDB_DIR"] = db_path
+        my_env["DRIVE_IDS"] = " ".join(drive_ids)
+        my_env["ABT_INITIAL_NUM_SUB_XSTREAMS"] = str(n_th)
+        my_env["MYFS_SUPERBLOCK_PATH"] = "/root/myfs_superblock"
+        #my_env["LIBDEBUG"] = MYLIB_PATH + "/debug.so"
+        cmd = get_db_bench_cmd(mode, op, n_th, cache_size, db_path)
     else:
         cmd = "taskset -c 0-{} ".format(n_core-1) + get_db_bench_cmd(mode, op, n_th, cache_size, db_path)
     print(cmd)
@@ -74,10 +89,15 @@ def run(mode, op, n_core, n_th, cache_size):
 #run("native", "set", 1, 1, 1024*1024)
 #run("abt", "set", 1, 1, 1024*1024)
 #run("abt", "set", 1, 1, 8*1024*1024)
-run("abt", "get", 8, 128, 1024*1024)
+#run("abt", "get", 8, 128, 1024*1024)
+#run("abt", "get", 8, 256, 1024*1024)
+run("pthpth", "get", 1, 1, 1024*1024)
+#run("abt", "get", 1, 1, 1024*1024)
 
-#run("spdk", "set", 1, 1, 4*1024*1024)
-#run("spdk", "get", 4, 64, 20*1024*1024*1024)
+#run("spdk", "set", 1, 1, 1*1024*1024)
+#run("spdk", "get", 1, 64, 20*1024*1024*1024)
+#run("spdk", "get", 1, 64, 1*1024*1024)
+#run("spdk", "get", 1, 64, 4*1024*1024)
 
 #run("native", "get", 8, 64, 1024*1024)
 
@@ -85,9 +105,9 @@ run("abt", "get", 8, 128, 1024*1024)
 #     for n_pth in [16,32,64,128,256,512]:
 #         run("abt", "get", n_core, n_pth, 1024*1024)
 
-#for n_core in [1,2,4,8]:
-#    for n_pth in [16,32,64,128,256,512]:
-#        run("abt", "get", n_core, n_pth, 20*1024*1024*1024)
+# for n_core in [1,2,4,8]:
+#     for n_pth in [16,32,64,128,256,512]:
+#         run("abt", "get", n_core, n_pth, 20*1024*1024*1024)
 
 #run("abt", "get", 1, 128, 1024*1024)
 
@@ -99,3 +119,6 @@ run("abt", "get", 8, 128, 1024*1024)
 #     for n_pth in [8,16,32,64,128,256]:
 #         run("native", "get", n_core, n_pth, 20*1024*1024*1024)
         
+# for n_core in [1,2,4,8]:
+#     for n_pth in [64,128,256,512]:
+#         run("spdk", "get", n_core, n_pth*n_core, 1024*1024)
