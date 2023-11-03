@@ -47,9 +47,12 @@ def run(mode, op, n_core, n_th, cache_size):
         x = input()
         assert x == "y"
 
+    subprocess.run("chcpu -e 1-{}".format(n_core-1))
+    subprocess.run("chcpu -d {}-39".format(n_core))
+    
     my_env = os.environ.copy()
+    drive_ids = ["0000:05:00.0","0000:06:00.0"]
     if mode == "abt":
-        drive_ids = ["0000:07:00.0","0000:0a:00.0"]
         mylib_build_cmd = "make -C {} ABT_PATH={} N_CORE={} ND={} USE_PREEMPT=0".format(MYLIB_PATH, ABT_PATH, n_core, len(drive_ids))
         process = subprocess.run(mylib_build_cmd.split())
         
@@ -70,7 +73,6 @@ def run(mode, op, n_core, n_th, cache_size):
         #cmd = "taskset -c 0-{} ".format(n_core-1) + cmd
         #cmd = "taskset -c 0-{} ".format(n_core) + cmd
     elif mode == "pthpth":
-        drive_ids = ["0000:07:00.0","0000:0a:00.0"]
         mylib_build_cmd = "make pth -C {} ABT_PATH={} N_CORE={} ND={} USE_PREEMPT=1".format(MYLIB_PATH, ABT_PATH, n_core, len(drive_ids))
         process = subprocess.run(mylib_build_cmd.split())
         
@@ -90,7 +92,7 @@ def run(mode, op, n_core, n_th, cache_size):
     print("captured stderr: {}".format(res.stderr.decode()))
 
 #run("native", "set", 1, 1, 1024*1024)
-#run("abt", "set", 1, 1, 1024*1024)
+run("abt", "set", 1, 1, 1024*1024)
 #run("abt", "set", 1, 1, 8*1024*1024)
 #run("abt", "get", 8, 128, 1024*1024)
 #run("abt", "get", 8, 256, 1024*1024)
