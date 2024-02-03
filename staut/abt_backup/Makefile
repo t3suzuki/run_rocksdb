@@ -7,9 +7,9 @@ FLAGS = -O3 -g -march=native
 FLAGS += -fpic
 FLAGS += -DN_CORE=$(N_CORE) -DND=$(ND)
 FLAGS += -DUSED_BLOCKS=4
-
+FLAGS += -I./pthabt/newlib
 all:
-	g++ $(FLAGS) -c nvme.cc  -fno-exceptions -I $(ABT_PATH)/include
+	g++ $(FLAGS) -c pthabt/newlib/nvme.cc  -fno-exceptions -I $(ABT_PATH)/include
 	gcc $(FLAGS) nvme.o abt_backup.c -lstdc++ -o abt_backup
 	gcc $(FLAGS) nvme.o abt_restore.c -lstdc++ -o abt_restore
 
