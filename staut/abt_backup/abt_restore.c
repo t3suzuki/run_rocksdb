@@ -5,6 +5,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include "common.h"
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -20,6 +21,7 @@ myfs_mount(char *myfs_superblock)
   int superblock_fd = open(myfs_superblock, O_RDWR);
   if (superblock_fd < 0) {
     perror("open");
+    exit(-1);
   }
   size_t page_size = getpagesize();
   struct stat statbuf;
@@ -68,9 +70,10 @@ main()
 {
   nvme_init();
   int ssd_fd = open(MY_BACKUP_PATH, O_RDWR|O_CREAT, 0);
+  printf("open ssd_fd = %d\n", ssd_fd);
   {
     int i;
-    myfs_mount("./myfs_superblock");
+    myfs_mount(MYFS_SUPERBLOCK_PATH);
     for (i=0; i<MYFS_MAX_FILES; i++) {
       if (superblock->file[i].name[0] != '\0') {
 	printf("%d %s %lu\n", i, superblock->file[i].name, superblock->file[i].n_block);

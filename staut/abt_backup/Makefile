@@ -23,6 +23,9 @@ run:
 backup:
 	DRIVE_IDS=0000:0f:00.0_0000:0e:00.0 ./abt_backup
 
+restore:
+	DRIVE_IDS=0000:0f:00.0_0000:0e:00.0 ./abt_restore
+
 clean:
 	rm -f *~
 	rm -f abt_backup abt_restore nvme.o

@@ -65,7 +65,7 @@ main()
   int ssd_fd = open(MY_BACKUP_PATH, O_RDWR|O_CREAT, 0);
   {
     int i;
-    myfs_mount("./myfs_superblock");
+    myfs_mount(MYFS_SUPERBLOCK_PATH);
     for (i=0; i<MYFS_MAX_FILES; i++) {
       if (superblock->file[i].name[0] != '\0') {
 	printf("%d %s %lu\n", i, superblock->file[i].name, superblock->file[i].n_block);
