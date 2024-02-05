@@ -41,7 +41,7 @@ parse(int ssd_fd, int i)
   int n_block = superblock->file[i].n_block;
   int i_block;
   for (i_block=0; i_block<n_block; i_block++) {
-    int blk = superblock->file[i].block[i_block];
+    uint64_t blk = superblock->file[i].block[i_block];
     uint64_t lba_base = blk * MYFS_BLOCK_SIZE / 512;
     uint64_t offset;
 
