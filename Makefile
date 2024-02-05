@@ -2,7 +2,7 @@
 init:
 	echo 0 | sudo tee -a /proc/sys/vm/mmap_min_addr
 	sleep 1
-	echo 2048 | sudo tee -a /proc/sys/vm/nr_hugepages
+	echo 512 | sudo tee -a /proc/sys/vm/nr_hugepages
 	sleep 1
 	-sudo umount mountpoint
 	sleep 1
@@ -14,12 +14,12 @@ init:
 	sleep 1
 	-sudo pvchange -x n /dev/nvme4n2	
 	sleep 1
-	make setup PCIADDR=0000:0d:00.0
+	make setup PCIADDR=0000:0f:00.0
 	sleep 1
 	make setup PCIADDR=0000:0e:00.0
 
 revert:
-	make reset PCIADDR=0000:0d:00.0
+	make reset PCIADDR=0000:0f:00.0
 	sleep 1
 	make reset PCIADDR=0000:0e:00.0
 	sleep 1
