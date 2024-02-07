@@ -9,6 +9,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <assert.h>
 #include <sys/mman.h>
 #include "myfs.h"
 
@@ -59,13 +60,22 @@ append(int ssd_fd, int i)
 }
   
 int
-main()
+main(int argv, char **argc)
 {
+  char my_backup_path[256];
+  char myfs_superblock_path[256];
+  assert(argv == 2);
+
+  printf("backup @ %s\n", argc[1]);
+
+  sprintf(my_backup_path, "%s/my_backup.dat", argc[1]);
+  sprintf(myfs_superblock_path, "%s/myfs_superblock", argc[1]);
+  
   nvme_init();
-  int ssd_fd = open(MY_BACKUP_PATH, O_RDWR|O_CREAT, 0);
+  int ssd_fd = open(my_backup_path, O_RDWR|O_CREAT, 0);
   {
     int i;
-    myfs_mount(MYFS_SUPERBLOCK_PATH);
+    myfs_mount(myfs_superblock_path);
     for (i=0; i<MYFS_MAX_FILES; i++) {
       if (superblock->file[i].name[0] != '\0') {
 	printf("%d %s %lu\n", i, superblock->file[i].name, superblock->file[i].n_block);
