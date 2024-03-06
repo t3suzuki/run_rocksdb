@@ -2,7 +2,7 @@
 init:
 	echo 0 | sudo tee -a /proc/sys/vm/mmap_min_addr
 	sleep 1
-	echo 512 | sudo tee -a /proc/sys/vm/nr_hugepages
+	echo 2048 | sudo tee -a /proc/sys/vm/nr_hugepages
 	sleep 1
 	-sudo umount mountpoint
 	sleep 1
@@ -32,6 +32,12 @@ revert:
 	sudo lvchange -a y vg1
 	sleep 1
 	sudo mount /dev/vg1/striped /home/tomoya-s/mountpoint/
+	echo 0 | sudo tee -a /sys/block/nvme3n2/queue/iostats
+	echo 0 | sudo tee -a /sys/block/nvme4n2/queue/iostats
+	echo 2 | sudo tee -a /sys/block/nvme3n2/queue/nomerges
+	echo 2 | sudo tee -a /sys/block/nvme4n2/queue/nomerges
+	echo 0 | sudo tee -a /sys/block/nvme3n2/queue/wbt_lat_usec
+	echo 0 | sudo tee -a /sys/block/nvme4n2/queue/wbt_lat_usec
 
 setup:
 	sudo modprobe uio_pci_generic
