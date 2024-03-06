@@ -1,0 +1,49 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index e16e46434..6fc07c06d 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -520,7 +520,7 @@ if(NOT WIN32)
+   add_definitions(-DROCKSDB_PLATFORM_POSIX -DROCKSDB_LIB_IO_POSIX)
+ endif()
+ 
+-option(WITH_FALLOCATE "build with fallocate" ON)
++option(WITH_FALLOCATE "build with fallocate" OFF)
+ if(WITH_FALLOCATE)
+   CHECK_CXX_SOURCE_COMPILES("
+ #include <fcntl.h>
+diff --git a/db/write_thread.h b/db/write_thread.h
+index af4d0967e..9139c2e64 100644
+--- a/db/write_thread.h
++++ b/db/write_thread.h
+@@ -125,7 +125,8 @@ class WriteThread {
+     uint64_t log_used;  // log number that this batch was inserted into
+     uint64_t log_ref;   // log number that memtable insert should reference
+     WriteCallback* callback;
+-    bool made_waitable;          // records lazy construction of mutex and cv
++    //bool made_waitable;          // records lazy construction of mutex and cv
++    std::atomic<bool> made_waitable;          // records lazy construction of mutex and cv
+     std::atomic<uint8_t> state;  // write under StateMutex() or pre-link
+     WriteGroup* write_group;
+     SequenceNumber sequence;  // the sequence number to use for the first key
+@@ -197,6 +198,8 @@ class WriteThread {
+     }
+ 
+     void CreateMutex() {
++      bool mw = made_waitable;
++#if 0
+       if (!made_waitable) {
+         // Note that made_waitable is tracked separately from state
+         // transitions, because we can't atomically create the mutex and
+@@ -205,6 +208,12 @@ class WriteThread {
+         new (&state_mutex_bytes) std::mutex;
+         new (&state_cv_bytes) std::condition_variable;
+       }
++#else
++      if (made_waitable.compare_exchange_strong(mw, true)) {
++        new (&state_mutex_bytes) std::mutex;
++        new (&state_cv_bytes) std::condition_variable;
++      }
++#endif
+     }
+ 
+     // returns the aggregate status of this Writer
